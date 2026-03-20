@@ -1,5 +1,213 @@
 # PEA Portfolio Workspace
 
+[ภาษาไทย](#ภาษาไทย) | [English](#english)
+
+## ภาษาไทย
+
+Repository นี้เป็น portfolio สำหรับรวบรวมงานที่ผมเคยทำเกี่ยวกับพลังงาน ข้อมูล และงานวิเคราะห์ในบริบทของ PEA โดยรวมทั้ง notebooks, web app ขนาดเล็ก, แผนภาพ workflow และ demo ต่าง ๆ ที่สะท้อนลักษณะงานที่ผมทำจริง เช่น forecasting, data validation และงานสนับสนุนเชิงปฏิบัติการ
+
+หัวข้อหลักของงานใน repo นี้คือ:
+
+- การวิเคราะห์ข้อมูลพลังงานทดแทน
+- การพยากรณ์กำลังผลิตไฟฟ้าจากแสงอาทิตย์
+- การตรวจสอบและกระทบยอดข้อมูล EGAT
+- การวิเคราะห์แนวโน้มโหลดจากข้อมูลหลายปี
+- เครื่องมือขนาดเล็กด้วย Python และ web
+
+## Portfolio นี้แสดงอะไรบ้าง
+
+จากงานที่รวมอยู่ใน repo นี้ สิ่งที่ผมทำมีทั้ง:
+
+- ทำความสะอาดและรวมข้อมูลจากหลายไฟล์ หลายช่วงเวลา
+- วิเคราะห์พฤติกรรมการผลิตและการใช้ไฟด้วย Python และ notebooks
+- สร้างต้นแบบระบบ forecast สำหรับ solar generation และข้อมูลเชิงเวลา
+- เปรียบเทียบไฟล์จากหลายแหล่งเพื่อหาความคลาดเคลื่อนและจุดที่ข้อมูลไม่ตรงกัน
+- แปลงงานเชิงเทคนิคให้อยู่ในรูปที่สื่อสารง่ายขึ้น เช่น chart, HTML demo และ process diagram
+
+## เครื่องมือที่ใช้
+
+- Python
+- pandas
+- NumPy
+- scikit-learn
+- statsmodels
+- Flask
+- pvlib
+- Plotly
+- Chart.js
+- HTML, CSS, JavaScript
+
+## โปรเจกต์เด่น
+
+### 1. Solar Forecast Web App
+
+ที่อยู่: [`projects/solar-forecast-webapp/`](projects/solar-forecast-webapp/)
+
+โปรเจกต์นี้เป็น web application ขนาดเล็กสำหรับประมาณการกำลังผลิตไฟฟ้าจากแสงอาทิตย์รายชั่วโมง โดยใช้ข้อมูลสภาพอากาศร่วมกับการจำลองระบบโซลาร์ เพื่อให้ผู้ใช้ทั่วไปสามารถกรอกพารามิเตอร์ของไซต์และดูผล forecast ได้ผ่านหน้าเว็บ
+
+สิ่งที่ผมทำ:
+
+- สร้าง Flask backend สำหรับดึงข้อมูลอากาศรายชั่วโมงจาก Open-Meteo
+- ใช้ `pvlib` ในการจำลองกำลังผลิตของระบบ PV จากค่าพิกัด มุมติดตั้ง และข้อมูลรังสี
+- เพิ่มตัวแปร loss ที่ปรับได้ เช่น soiling, shading, mismatch, wiring และ degradation
+- ส่งออกทั้งข้อมูลรายชั่วโมงและค่า summary เช่น peak, total energy, capacity factor และ loss percentage
+- เชื่อม backend เข้ากับหน้าเว็บที่แสดงกราฟกำลังผลิตและ irradiance
+
+ไฟล์สำคัญ:
+
+- [`projects/solar-forecast-webapp/app.py`](projects/solar-forecast-webapp/app.py)
+- [`projects/solar-forecast-webapp/templates/index.html`](projects/solar-forecast-webapp/templates/index.html)
+- [`projects/solar-forecast-webapp/test.html`](projects/solar-forecast-webapp/test.html)
+
+ทักษะที่สะท้อน:
+
+- การเชื่อมต่อ API
+- logic ด้าน energy forecasting
+- การเชื่อม backend และ frontend
+- การทำ data visualization
+
+### 2. Renewable Generation Analysis
+
+ที่อยู่: [`projects/renewable-generation-analysis/`](projects/renewable-generation-analysis/)
+
+โฟลเดอร์นี้เป็นงานวิเคราะห์และทดลอง forecast สำหรับข้อมูลพลังงานทดแทน โดยเน้นกลุ่ม solar, biomass และ biological เป็นหลัก จุดประสงค์คือเพื่อทำความเข้าใจพฤติกรรมของโรงไฟฟ้า จัดกลุ่มสินทรัพย์ที่มีรูปแบบคล้ายกัน และทดลองแนวทาง forecast สำหรับ solar generation
+
+สิ่งที่ผมทำ:
+
+- เตรียมและคัดกรองข้อมูลตามประเภทเชื้อเพลิง
+- คำนวณตัวชี้วัดสำคัญ เช่น average efficiency, ความผันผวน และ missing-rate behavior
+- ใช้ K-Means clustering เพื่อจัดกลุ่มโรงไฟฟ้าที่มีลักษณะการทำงานใกล้กัน
+- ทดลองแนวทาง forecast สำหรับ solar ด้วย weather data และ PV modeling
+- สร้าง output เชิงภาพเพื่อช่วยดูรูปแบบของ solar profile และเปรียบเทียบผล forecast
+
+ไฟล์ตัวแทน:
+
+- [`projects/renewable-generation-analysis/dataanalystphase1.ipynb`](projects/renewable-generation-analysis/dataanalystphase1.ipynb)
+- [`projects/renewable-generation-analysis/dataanalysephase2.ipynb`](projects/renewable-generation-analysis/dataanalysephase2.ipynb)
+- [`projects/renewable-generation-analysis/KmeansVspp.ipynb`](projects/renewable-generation-analysis/KmeansVspp.ipynb)
+- [`projects/renewable-generation-analysis/groupkmean.ipynb`](projects/renewable-generation-analysis/groupkmean.ipynb)
+- [`projects/renewable-generation-analysis/predictsolartest.ipynb`](projects/renewable-generation-analysis/predictsolartest.ipynb)
+- [`projects/renewable-generation-analysis/finalforecast.ipynb`](projects/renewable-generation-analysis/finalforecast.ipynb)
+
+ทักษะที่สะท้อน:
+
+- exploratory data analysis
+- clustering และ segmentation
+- การวิเคราะห์ performance ของพลังงานทดแทน
+- การทำ forecasting prototype
+
+### 3. EGAT Billing Audit
+
+ที่อยู่: [`projects/egat-billing-audit/`](projects/egat-billing-audit/)
+
+งานชุดนี้เน้นการตรวจสอบและกระทบยอดไฟล์ที่เกี่ยวข้องกับ billing ระหว่าง EGAT และผลการประมวลผลภายใน เป้าหมายคือทำให้เห็น mismatch ได้ชัดขึ้น และเตรียมไฟล์ที่ตรวจสอบต่อได้ง่าย
+
+สิ่งที่ผมทำ:
+
+- แปลงค่าการใช้ไฟให้อยู่ในรูปแบบที่พร้อมสำหรับการตรวจสอบต่อ
+- เปรียบเทียบข้อมูลระหว่างไฟล์ต้นทางและไฟล์หลังประมวลผล
+- แยกรายการที่มีอยู่เฉพาะฝั่งใดฝั่งหนึ่ง
+- สรุป mismatch เพื่อช่วยให้ตรวจทานด้วยมือได้ง่ายขึ้น
+
+ไฟล์ตัวแทน:
+
+- [`projects/egat-billing-audit/egat.ipynb`](projects/egat-billing-audit/egat.ipynb)
+
+ทักษะที่สะท้อน:
+
+- reconciliation logic
+- การเปรียบเทียบไฟล์
+- data validation
+- งานสนับสนุนเชิงปฏิบัติการ
+
+### 4. Load Trend Analysis
+
+ที่อยู่: [`projects/load-trend-analysis/`](projects/load-trend-analysis/)
+
+โปรเจกต์นี้เป็นการวิเคราะห์ข้อมูลโหลดจากหลายปี เพื่อหาการเปลี่ยนแปลงของแนวโน้ม จัดเตรียมมุมมองข้อมูลแบบรวมหลายปี และสร้างตัวชี้วัดที่ใช้เปรียบเทียบต่อได้
+
+สิ่งที่ผมทำ:
+
+- อ่านข้อมูลรายปีและปรับโครงสร้างให้อยู่ในรูปแบบที่เปรียบเทียบกันได้
+- สร้างตัวแปรสรุปรายเดือนและค่าเฉลี่ยจากข้อมูลสัญญา
+- รวมหลายปีเข้ามาเป็นชุดข้อมูลเดียวสำหรับการวิเคราะห์
+- คำนวณเปอร์เซ็นต์แนวโน้มปีต่อปี
+- เพิ่ม flag ตามภูมิภาคเพื่อใช้วิเคราะห์แบบ grouped analysis
+
+ไฟล์ตัวแทน:
+
+- [`projects/load-trend-analysis/phase1.ipynb`](projects/load-trend-analysis/phase1.ipynb)
+- [`projects/load-trend-analysis/phase2.ipynb`](projects/load-trend-analysis/phase2.ipynb)
+- [`projects/load-trend-analysis/phase3.ipynb`](projects/load-trend-analysis/phase3.ipynb)
+
+ทักษะที่สะท้อน:
+
+- การเตรียมข้อมูลจากหลายไฟล์
+- feature engineering
+- trend analysis
+- การสื่อสารผลผ่าน notebook
+
+### 5. SARIMA Forecast Prototype
+
+ที่อยู่: [`projects/sarima-forecast-prototype/`](projects/sarima-forecast-prototype/)
+
+notebook นี้เป็นต้นแบบงาน forecast แบบ time series สำหรับข้อมูลผู้ใช้รายเดือน โดยเตรียมข้อมูลให้อยู่ในรูป time index ที่ถูกต้อง และใช้โมเดลตระกูล SARIMA/SARIMAX สำหรับพยากรณ์ค่าล่วงหน้า
+
+สิ่งที่ผมทำ:
+
+- ทำความสะอาดข้อมูลรายเดือนให้อยู่ในรูป time-series ที่พร้อมใช้
+- แปลงปี พ.ศ. เป็น ค.ศ. เพื่อให้ใช้กับโมเดลได้ถูกต้อง
+- สร้าง pipeline สำหรับการ forecast ด้วย SARIMAX
+- เตรียมข้อมูลสำหรับการพยากรณ์และการประเมินผล
+
+ไฟล์ตัวแทน:
+
+- [`projects/sarima-forecast-prototype/projectforecast.ipynb`](projects/sarima-forecast-prototype/projectforecast.ipynb)
+
+ทักษะที่สะท้อน:
+
+- การเตรียมข้อมูล time series
+- statistical forecasting
+- model prototyping
+
+## Demo และ Utility อื่น ๆ
+
+ไฟล์กลุ่มนี้มีขนาดเล็กกว่าตัวโปรเจกต์หลัก แต่ช่วยแสดงวิธีที่ผมสื่อสารไอเดียและทำเครื่องมือใช้งานเร็ว ๆ ได้:
+
+- [`demos/real-time-energy-chart.html`](demos/real-time-energy-chart.html)
+  demo front-end สำหรับแสดง bar chart และ pie chart แบบ real-time ด้วยข้อมูลจำลอง
+- [`demos/pea-process-diagram.html`](demos/pea-process-diagram.html)
+  แผนภาพ workflow ที่อธิบายขั้นตอนงานระหว่าง EGAT, PEA และหน่วยงานที่เกี่ยวข้อง
+- [`scripts/voltage-monitor-simulator.py`](scripts/voltage-monitor-simulator.py)
+  สคริปต์ Python ขนาดเล็กสำหรับจำลองเหตุการณ์แรงดันไฟตกและการแจ้งเตือนเบื้องต้น
+- [`projects/python-pea-experiments/test.py`](projects/python-pea-experiments/test.py)
+  utility script สำหรับเลือกไฟล์ CSV และ preview ข้อมูลผ่าน file picker บน desktop
+
+## แนะนำลำดับการดู repo นี้
+
+ถ้าเข้ามาดู repo นี้ครั้งแรก ผมแนะนำลำดับนี้:
+
+1. เริ่มจาก [`projects/solar-forecast-webapp/`](projects/solar-forecast-webapp/) เพื่อดูงานแบบ end-to-end
+2. ต่อด้วย [`projects/renewable-generation-analysis/`](projects/renewable-generation-analysis/) เพื่อดูงานวิเคราะห์ clustering และ forecasting experiments
+3. เปิด [`projects/egat-billing-audit/`](projects/egat-billing-audit/) เพื่อดูงานด้าน reconciliation และ validation
+4. ปิดท้ายด้วย [`projects/load-trend-analysis/`](projects/load-trend-analysis/) และ [`projects/sarima-forecast-prototype/`](projects/sarima-forecast-prototype/) สำหรับงานวิเคราะห์เชิง notebook
+
+## หมายเหตุเกี่ยวกับเวอร์ชันบน GitHub
+
+เวอร์ชันบน GitHub นี้ถูกจัดให้เหมาะกับการใช้เป็น portfolio
+
+- ไม่มี raw data
+- ไม่มีไฟล์ CSV และ XLSX exports
+- ไม่มี ZIP archives
+- ไม่มี generated HTML ขนาดใหญ่ที่อาจฝังข้อมูลไว้ภายใน
+- notebook outputs ถูกล้างก่อน publish
+
+ดังนั้น notebooks บางไฟล์อาจอ้างถึง source files ที่ไม่ได้อยู่ใน public version นี้ จุดประสงค์ของ repo นี้คือแสดง workflow, logic และโครงสร้างงาน โดยไม่เปิดเผยข้อมูลภายในหรือ raw data
+
+---
+
+## English
+
 This repository is a portfolio of projects I worked on around PEA-related energy and data tasks. It brings together analysis notebooks, small applications, workflow diagrams, and demos that reflect the kind of work I did in forecasting, data validation, and operational reporting.
 
 The main themes in this repo are:
