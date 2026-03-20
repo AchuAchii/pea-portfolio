@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Real-time Energy Chart: Bar + Pie</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h2>Real-time Bar Chart: Simulated Energy Usage</h2>
+  <canvas id="barChart" width="700" height="350"></canvas>
+
+  <h2>Real-time Pie Chart: Simulated MW Distribution</h2>
+  <canvas id="pieChart" width="400" height="150"></canvas>
+
+  <script>
+    const fuelTypes = ['Natural Gas', 'Coal', 'Hydropower', 'Renewables', 'Oil'];
+
+    // ========== BAR CHART ==========
+    const ctxBar = document.getElementById('barChart').getContext('2d');
+    const barChart = new Chart(ctxBar, {
+      type: 'bar',
+      data: {
+        labels: fuelTypes,
+        datasets: [{
+          label: 'Energy Usage (simulated)',
+          data: [0, 0, 0, 0, 0],
+          backgroundColor: ['#4bc0c0', '#ff6384', '#36a2eb', '#ffce56', '#9966ff'],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: 'Energy Units / Customers' }
+          },
+          x: {
+            title: { display: true, text: 'Fuel Type' }
+          }
+        }
+      }
+    });
+
+    // Update bar chart every 1 second
+    setInterval(() => {
+      const randomData = fuelTypes.map(() => Math.floor(Math.random() * 100 + 20)); // 20–119
+      barChart.data.datasets[0].data = randomData;
+      barChart.update();
+    }, 1000);
+
+    // ========== PIE CHART ==========
+    const ctxPie = document.getElementById('pieChart').getContext('2d');
+    const pieChart = new Chart(ctxPie, {
+      type: 'pie',
+      data: {
+        labels: fuelTypes,
+        datasets: [{
+          data: [0, 0, 0, 0, 0],
+          backgroundColor: ['#4bc0c0', '#ff6384', '#36a2eb', '#ffce56', '#9966ff']
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom' },
+          title: {
+            display: true,
+            text: 'Power Generation (MW) by Fuel Type'
+          }
+        }
+      }
+    });
+
+    // Update pie chart every 5 seconds
+    setInterval(() => {
+      const randomMW = fuelTypes.map(() => Math.floor(Math.random() * 4000 + 1000)); // 1000–4999
+      pieChart.data.datasets[0].data = randomMW;
+      pieChart.update();
+    }, 5000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Solar Forecast – PEA Pastel</title>
+
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+
+<style>
+  /* ───── ธีมเดิม ───── */
+  :root{--purple:#6E3C9A;--gold:#F5C441;--bg:#fff;--text:#37304E;--shadow:0 4px 6px rgb(0 0 0 /.08)}
+  *{margin:0;padding:0;box-sizing:border-box;font-family:"Segoe UI",sans-serif;color:var(--text)}
+  body{background:linear-gradient(135deg,#F8F4FC,#FFF5DA);min-height:100vh;padding:24px}
+  .container{max-width:1400px;margin:auto}
+  .header{text-align:center;margin-bottom:26px}.header h1{font-size:2.1rem;font-weight:700;color:#4C2570}
+  .main{display:grid;grid-template-columns:380px 1fr;gap:32px}@media(max-width:960px){.main{grid-template-columns:1fr}}
+  .card{background:var(--bg);border-radius:18px;box-shadow:var(--shadow);padding:24px;margin-bottom:22px}
+  label{font-size:.84rem;font-weight:500;margin-bottom:4px;display:block}
+  input,select{width:100%;padding:8px 11px;border:1px solid #d5cfe4;border-radius:9px;font-size:.85rem;background:#fff}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+  .loss{display:flex;justify-content:space-between;margin-bottom:8px}.loss input{width:70px}
+  .btn{width:100%;border:0;border-radius:9px;padding:12px;font-weight:600;cursor:pointer;
+       background:linear-gradient(135deg,var(--purple),var(--gold));color:#fff}
+  .loading{display:inline-block;width:18px;height:18px;border:3px solid #fff;border-radius:50%;border-top-color:transparent;
+    animation:spin 1s linear infinite;margin-left:7px}@keyframes spin{to{transform:rotate(360deg)}}
+  .summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:18px;margin-bottom:24px}
+  .sum-card{background:#EEE8F8;border-radius:14px;box-shadow:var(--shadow);padding:20px;text-align:center}
+  .sum-card h4{font-size:.8rem;color:#4C2570;margin-bottom:6px}.sum-card .val{font-size:1.4rem;font-weight:700}
+  .chart-box{height:300px;margin-bottom:26px}
+  .error{background:#fef2f2;border:1px solid #fecaca;color:#c02626;padding:16px;border-radius:10px;margin-bottom:20px;text-align:center;display:none}
+  .placeholder{text-align:center;color:#737187;padding:70px 24px}
+  .sec-btn{background:var(--gold);color:#432400;border:0;padding:8px 16px;border-radius:9px;font-size:.8rem;cursor:pointer}
+
+  /* ───── เมนู ───── */
+  .menu-btn{position:fixed;top:20px;left:20px;z-index:1001;
+            width:38px;height:38px;border:none;border-radius:8px;cursor:pointer;
+            background:var(--purple);color:#fff;font-size:1.3rem;display:flex;align-items:center;justify-content:center}
+  .sidebar{position:fixed;top:0;left:-270px;height:100%;width:270px;
+           padding:70px 22px 40px;background:#fff;          /* <<< เว้นหัว 70px */
+           box-shadow:var(--shadow);overflow-y:auto;transition:left .25s ease;z-index:1000}
+  .sidebar.open{left:0}
+  .sidebar h2{font-size:1.25rem;color:var(--purple);margin-bottom:16px}
+  .sidebar h3{font-size:.95rem;margin:18px 0 6px;color:var(--purple)}
+  .sidebar p,.sidebar li{font-size:.78rem;line-height:1.35}
+  .sidebar ul{padding-left:16px}
+  .sidebar::-webkit-scrollbar{width:6px}.sidebar::-webkit-scrollbar-thumb{background:#d4cae8;border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- ☰ BUTTON -->
+<button class="menu-btn" onclick="sidebar.classList.toggle('open')">☰</button>
+
+<!-- SIDEBAR -->
+<aside id="sidebar" class="sidebar">
+  <h2>อธิบายตัวแปร</h2>
+  <h3>ตำแหน่ง &amp; ระบบ</h3>
+  <ul>
+    <li><b>Latitude / Longitude</b> – พิกัดไซต์ (° ทศนิยม)</li>
+    <li><b>Altitude</b> – ความสูงเหนือระดับน้ำทะเล (m)</li>
+    <li><b>System (kW DC)</b> – กำลังแผงรวม (STC)</li>
+    <li><b>Tilt</b> – มุมเอียงแผง 0° = ราบ</li>
+    <li><b>Azimuth</b> – ทิศแผง 0° N / 90° E / 180° S</li>
+    <li><b>Module type</b> – เทคโนโลยีแผง</li>
+  </ul>
+
+  <h3>Losses (%)</h3>
+  <ul>
+    <li><b>Soiling</b> – ฝุ่น/สิ่งสกปรก</li>
+    <li><b>Shading</b> – เงาบัง</li>
+    <li><b>Mismatch</b> – โมดูลไม่สม่ำเสมอ</li>
+    <li><b>Wiring</b> – สูญเสียสายไฟ</li>
+    <li><b>Connections</b> – ข้อต่อ</li>
+    <li><b>LID</b> – Light-Induced Degradation</li>
+    <li><b>Nameplate</b> – แผงไม่เต็มป้าย</li>
+    <li><b>Availability</b> – เวลาหยุดซ่อม</li>
+    <li><b>Degradation</b> – เสื่อมสะสม</li>
+  </ul>
+
+  <h3>ผลลัพธ์</h3>
+  <ul>
+    <li><b>Peak Power</b> – ค่าสูงสุด (kW)</li>
+    <li><b>Total Energy</b> – พลังงานรวม (kWh) × 0.85</li>
+    <li><b>Plant Factor</b> – Peak Power ÷ (Total kWh×24h)</li>
+    <li><b>Total Losses</b> – สูญเสียรวม (%)</li>
+  </ul>
+</aside>
+
+<div class="container">
+  <!-- *** โค้ดเดิมทุกบรรทัดด้านล่าง ไม่เปลี่ยน *** -->
+  <div class="header"><h1>☀️ Solar Forecast Calculator</h1></div>
+
+  <div class="main">
+    <!-- LEFT -->
+    <div>
+      <div class="card"><h2>ตั้งค่าระบบ</h2>
+        <div class="form-row">
+          <div><label>Latitude</label><input id="lat" type="number" value="11.474729" step="0.00001"></div>
+          <div><label>Longitude</label><input id="lon" type="number" value="99.596890" step="0.00001"></div>
+        </div>
+        <div class="form-row">
+          <div><label>Altitude (m)</label><input id="alt" type="number" value="50"></div>
+          <div><label>System (kW DC)</label><input id="kw" type="number" value="5000"></div>
+        </div>
+        <div class="form-row">
+          <div><label>Tilt (°)</label><input id="tilt" type="number" value="15"></div>
+          <div><label>Azimuth (°)</label><input id="az" type="number" value="180"></div>
+        </div>
+        <label>Module type</label>
+        <select id="module">
+          <option value="mono">Monocrystalline</option>
+          <option value="poly">Polycrystalline</option>
+          <option value="thinfilm">Thin-film</option>
+          <option value="bifacial">Bifacial</option>
+        </select>
+      </div>
+
+      <div class="card"><h3>Losses (%)</h3><div id="lossWrap"></div></div>
+
+      <div class="card"><h3>เลือกวันที่</h3>
+        <input type="date" id="pickDate" min="2020-01-01" max="2030-12-31">
+        <button id="run" class="btn" onclick="runCalc()">คำนวณ<span id="spin" class="loading" style="display:none"></span></button>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div>
+      <div id="err" class="error"></div>
+
+      <div id="out" style="display:none">
+        <div class="summary">
+          <div class="sum-card"><h4>Peak Power</h4><div class="val" id="PeakPower">0</div><div>kW</div></div>
+          <div class="sum-card"><h4>Total Energy</h4><div class="val" id="TotalEnergy">0</div><div>kWh</div></div>
+          <div class="sum-card"><h4>Plant Factor</h4><div class="val" id="PlantFactor">0</div><div>%</div></div>
+          <div class="sum-card"><h4>Total Losses</h4><div class="val" id="TotalLosses">0</div><div>%</div></div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <h3>AC Power Output</h3><button class="sec-btn" onclick="downloadCSV()">CSV</button>
+          </div>
+          <div class="chart-box"><canvas id="acChart"></canvas></div>
+        </div>
+
+        <div class="card"><h3>Solar Irradiance</h3><div class="chart-box"><canvas id="irrChart"></canvas></div></div>
+      </div>
+
+      <div id="ph" class="card placeholder">กรอกค่าแล้วกด “คำนวณ”</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- CONST ---------- */
+const MODULES={mono:{eff:.90,gamma:-0.004},poly:{eff:.88,gamma:-0.0045},
+  thinfilm:{eff:.78,gamma:-0.0025},bifacial:{eff:.92,gamma:-0.004}};
+const INV_EFF=.97,ALBEDO=.20;
+
+/* loss inputs */
+["soiling","shading","mismatch","wiring","connections","lid","nameplate","availability","degradation"]
+ .forEach(n=>lossWrap.insertAdjacentHTML("beforeend",
+   `<div class="loss"><label>${n}</label><input type="number" value="${n==='degradation'?12:0}" step="0.1" data-loss="${n}"></div>`));
+pickDate.value=new Date().toISOString().split("T")[0];
+
+const $=id=>document.getElementById(id);let acChart=null,irrChart=null,csv="";
+
+/* ---------- 1) weather ---------- */
+async function getWeather(lat,lon,date){
+  const today=new Date().toISOString().slice(0,10);
+  const base=date<today? "https://archive-api.open-meteo.com/v1/archive"
+                        :"https://api.open-meteo.com/v1/forecast";
+  const vars="temperature_2m,cloud_cover,direct_normal_irradiance,diffuse_radiation,shortwave_radiation";
+  const url=`${base}?latitude=${lat}&longitude=${lon}&hourly=${vars}&start_date=${date}&end_date=${date}&timezone=Asia%2FBangkok`;
+  const d=await fetch(url).then(r=>r.json());
+  if(!d.hourly||!d.hourly.time) throw new Error(d.reason||"Open-Meteo ไม่มีข้อมูล");
+  const h=d.hourly,rows=[];h.time.forEach((t,i)=>rows.push({
+    time:t.split("T")[1].slice(0,5),temp:h.temperature_2m[i],
+    cloud:h.cloud_cover[i]??0,dni:h.direct_normal_irradiance[i]??0,
+    dhi:h.diffuse_radiation[i]??0,ghi:h.shortwave_radiation[i]??0}));
+  return rows;
+}
+
+/* ---------- 2) loss ---------- */
+const dynamicLoss=(L,wx)=>{
+  const avg=wx.reduce((s,r)=>s+r.cloud,0)/wx.length/100;
+  const adj={...L,shading:L.shading*(1+avg)};
+  return (1-Object.values(adj).reduce((p,v)=>p*(1-v/100),1))*100;
+};
+
+/* ---------- 3) PV calc ---------- */
+function calcPV(cfg,wx){
+  const beta=cfg.tilt*Math.PI/180,azP=cfg.az*Math.PI/180,m=MODULES[cfg.mod];
+  const lossPct=dynamicLoss(cfg.losses,wx);
+  return wx.map(r=>{
+    const dt=new Date(`${cfg.date}T${r.time}:00`);
+    const pos=SunCalc.getPosition(dt,cfg.lat,cfg.lon);
+    const cosInc=Math.max(Math.sin(pos.altitude)*Math.cos(beta)+Math.cos(pos.altitude)*Math.sin(beta)*Math.cos(pos.azimuth-azP),0);
+    const poa=r.dni*cosInc+r.dhi*(1+Math.cos(beta))/2+r.ghi*ALBEDO*(1-Math.cos(beta))/2;
+    const pdc=cfg.kw*1e3*m.eff*(poa/1000)*(1+m.gamma*(r.temp-25));
+    const raw=Math.max(0,pdc*INV_EFF),net=raw*(1-lossPct/100);
+    return {...r,poa,pacRaw:raw,pacNet:net};
+  });
+}
+
+/* ---------- 4) run ---------- */
+async function runCalc(){
+  $("err").style.display="none";$("run").disabled=true;$("spin").style.display="inline-block";
+  try{
+    const cfg={lat:+$("lat").value,lon:+$("lon").value,date:$("pickDate").value,
+      kw:+$("kw").value,tilt:+$("tilt").value,az:+$("az").value,mod:$("module").value,
+      losses:Object.fromEntries([...document.querySelectorAll("[data-loss]")].map(e=>[e.dataset.loss,+e.value||0]))};
+    const wx=await getWeather(cfg.lat,cfg.lon,cfg.date);
+    const rows=calcPV(cfg,wx);
+    const peak=Math.max(...rows.map(r=>r.pacNet));
+    const totalkWh=rows.reduce((s,r)=>s+r.pacNet,0)/1000;
+    const plantFactor = ((totalkWh *0.85)/ ((peak / 1000) * 24)) * 100;
+    $("PeakPower").textContent=(peak/1000).toFixed(1);
+    $("TotalEnergy").textContent=(totalkWh*0.85).toFixed(1);
+    $("PlantFactor").textContent = plantFactor.toFixed(1);    
+    $("TotalLosses").textContent=dynamicLoss(cfg.losses,wx).toFixed(1);
+
+    csv="Time,AC_kW\n"+rows.map(r=>`${r.time},${(r.pacNet/1000).toFixed(2)}`).join("\n");
+    const labels=rows.map(r=>r.time);
+
+    acChart?.destroy();
+    acChart=new Chart($("acChart"),{type:"line",data:{labels,
+      datasets:[
+        {label:"AC Net (kW)",data:rows.map(r=>r.pacNet/1000),
+         borderColor:"#6E3C9A",backgroundColor:"rgba(110,60,154,.18)",borderWidth:2,fill:true,pointRadius:2,tension:.3},
+        {label:"AC Raw (kW)",data:rows.map(r=>r.pacRaw/1000),
+         borderColor:"#F5C441",borderDash:[5,4],borderWidth:2,fill:false,pointRadius:0,tension:.3}]},
+      options:{plugins:{legend:{position:"top"}},scales:{y:{beginAtZero:true}}}});
+
+    irrChart?.destroy();
+    irrChart=new Chart($("irrChart"),{type:"line",data:{labels,
+      datasets:[
+        {label:"GHI (W/m²)",data:rows.map(r=>r.ghi),
+         borderColor:"#6E3C9A",backgroundColor:"rgba(110,60,154,.18)",borderWidth:2,fill:true,pointRadius:2,tension:.3},
+        {label:"DNI (W/m²)",data:rows.map(r=>r.dni),
+         borderColor:"#F5C441",borderDash:[5,4],borderWidth:2,fill:false,pointRadius:2,tension:.3}]},
+      options:{plugins:{legend:{position:"top"}},scales:{y:{beginAtZero:true}}}});
+
+    $("ph").style.display="none";$("out").style.display="block";
+  }catch(e){$("err").textContent="⚠️ "+e.message;$("err").style.display="block";}
+  $("run").disabled=false;$("spin").style.display="none";
+}
+
+/* ---------- download CSV ---------- */
+function downloadCSV(){
+  if(!csv) return;
+  const link=document.createElement("a");
+  link.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+  link.download="pv_forecast.csv";link.click();URL.revokeObjectURL(link.href);
+}
+</script>
+</body>
+</html>

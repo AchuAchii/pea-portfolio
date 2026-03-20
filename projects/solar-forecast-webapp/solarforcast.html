@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Forecast Calculator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e0f2fe 0%, #fff3e0 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #1e3a8a;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .header p {
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+        
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+        
+        .card h2, .card h3 {
+            color: #374151;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            transition: border-color 0.15s ease-in-out;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        .losses-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .losses-group input {
+            width: 80px;
+        }
+        
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, #3b82f6, #10b981);
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 16px;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .summary-card h4 {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .summary-card .value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #111827;
+        }
+        
+        .summary-card .unit {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 24px;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .placeholder {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+        
+        .placeholder svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        .icon {
+            width: 20px;
+            height: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>
+                <svg class="icon" fill="#f59e0b" viewBox="0 0 24 24">
+                    <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
+                </svg>
+                Solar Forecast Calculator
+            </h1>
+            <p>คำนวณการผลิตไฟฟ้าจากพลังงานแสงอาทิตย์</p>
+        </div>
+
+        <div class="main-grid">
+            <!-- Left Panel: Configuration -->
+            <div class="left-panel">
+                <!-- System Configuration -->
+                <div class="card">
+                    <h2>
+                        <svg class="icon" fill="#3b82f6" viewBox="0 0 24 24">
+                            <path fill-rule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 4.889c-.02.12-.115.26-.297.348a7.493 7.493 0 00-.986.57c-.166.115-.334.126-.45.083L6.3 5.508a1.875 1.875 0 00-2.282.819l-.922 1.597a1.875 1.875 0 00.432 2.385l.84.692c.095.078.17.229.154.43a7.598 7.598 0 000 1.139c.015.2-.059.352-.153.43l-.841.692a1.875 1.875 0 00-.432 2.385l.922 1.597a1.875 1.875 0 002.282.818l1.019-.382c.115-.043.283-.031.45.082.312.214.641.405.985.57.182.088.277.228.297.35l.178 1.071c.151.904.933 1.567 1.85 1.567h1.844c.916 0 1.699-.663 1.85-1.567l.178-1.072c.02-.12.114-.26.297-.349.344-.165.673-.356.985-.570.167-.114.335-.125.45-.082l1.02.382a1.875 1.875 0 002.28-.819l.923-1.597a1.875 1.875 0 00-.432-2.385l-.84-.692c-.095-.078-.17-.229-.154-.43a7.614 7.614 0 000-1.139c-.016-.2.059-.352.153-.43l.84-.692c.708-.582.891-1.59.433-2.385l-.922-1.597a1.875 1.875 0 00-2.282-.818l-1.02.382c-.114.043-.282.031-.449-.083a7.49 7.49 0 00-.985-.57c-.183-.087-.277-.227-.297-.348L13.928 3.817c-.15-.904-.933-1.567-1.85-1.567h-1.844zM12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" clip-rule="evenodd" />
+                        </svg>
+                        ตั้งค่าระบบ
+                    </h2>
+                    
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div>
+                                <label>ละติจูด (Latitude)</label>
+                                <input type="number" id="lat" step="0.000001" value="13.850929802369471">
+                            </div>
+                            <div>
+                                <label>ลองจิจูด (Longitude)</label>
+                                <input type="number" id="lon" step="0.000001" value="100.55747605767155">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div>
+                                <label>ความสูง (m)</label>
+                                <input type="number" id="altitude" value="50">
+                            </div>
+                            <div>
+                                <label>ขนาดระบบ (kW)</label>
+                                <input type="number" id="systemKw" value="5000">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="form-row">
+                            <div>
+                                <label>มุมเอียง (°)</label>
+                                <input type="number" id="tilt" value="15">
+                            </div>
+                            <div>
+                                <label>ทิศทาง (°)</label>
+                                <input type="number" id="azimuth" value="180">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Losses Configuration -->
+                <div class="card">
+                    <h3>การสูญเสีย (%)</h3>
+                    <div id="lossesContainer">
+                        <div class="losses-group">
+                            <label>Soiling</label>
+                            <input type="number" step="0.1" value="0" data-loss="soiling">
+                        </div>
+                        <div class="losses-group">
+                            <label>Shading</label>
+                            <input type="number" step="0.1" value="0" data-loss="shading">
+                        </div>
+                        <div class="losses-group">
+                            <label>Mismatch</label>
+                            <input type="number" step="0.1" value="0" data-loss="mismatch">
+                        </div>
+                        <div class="losses-group">
+                            <label>Wiring</label>
+                            <input type="number" step="0.1" value="0" data-loss="wiring">
+                        </div>
+                        <div class="losses-group">
+                            <label>Connections</label>
+                            <input type="number" step="0.1" value="0" data-loss="connections">
+                        </div>
+                        <div class="losses-group">
+                            <label>LID</label>
+                            <input type="number" step="0.1" value="0" data-loss="lid">
+                        </div>
+                        <div class="losses-group">
+                            <label>Nameplate</label>
+                            <input type="number" step="0.1" value="0" data-loss="nameplate">
+                        </div>
+                        <div class="losses-group">
+                            <label>Availability</label>
+                            <input type="number" step="0.1" value="0" data-loss="availability">
+                        </div>
+                        <div class="losses-group">
+                            <label>Degradation</label>
+                            <input type="number" step="0.1" value="12" data-loss="degradation">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Date Selection -->
+                <div class="card">
+                    <h3>
+                        <svg class="icon" fill="#10b981" viewBox="0 0 24 24">
+                            <path d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5a2.25 2.25 0 002.25-2.25m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5a2.25 2.25 0 002.25 2.25v7.5" />
+                        </svg>
+                        เลือกวันที่
+                    </h3>
+                    <input type="date" id="selectedDate">
+                    <button class="btn-primary" onclick="calculateSolar()">
+                        <span id="btnText">คำนวณ</span>
+                        <span id="btnLoading" class="loading" style="display: none;"></span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Panel: Results -->
+            <div class="right-panel">
+                <div id="error" class="error" style="display: none;"></div>
+                
+                <div id="results" style="display: none;">
+                    <!-- Summary Cards -->
+                    <div class="summary-grid">
+                        <div class="summary-card">
+                            <h4>
+                                <svg class="icon" fill="#eab308" viewBox="0 0 24 24">
+                                    <path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                                </svg>
+                                Peak Power
+                            </h4>
+                            <div class="value" id="peakPower">0</div>
+                            <div class="unit">kW</div>
+                        </div>
+                        
+                        <div class="summary-card">
+                            <h4>
+                                <svg class="icon" fill="#3b82f6" viewBox="0 0 24 24">
+                                    <path d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                                </svg>
+                                Total Energy
+                            </h4>
+                            <div class="value" id="totalEnergy">0</div>
+                            <div class="unit">kWh</div>
+                        </div>
+                        
+                        <div class="summary-card">
+                            <h4>
+                                <svg class="icon" fill="#f59e0b" viewBox="0 0 24 24">
+                                    <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
+                                </svg>
+                                Capacity Factor
+                            </h4>
+                            <div class="value" id="capacityFactor">0</div>
+                            <div class="unit">%</div>
+                        </div>
+                        
+                        <div class="summary-card">
+                            <h4>
+                                <svg class="icon" fill="#ef4444" viewBox="0 0 24 24">
+                                    <path fill-rule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567L9.05 4.889c-.02.12-.115.26-.297.348a7.493 7.493 0 00-.986.57c-.166.115-.334.126-.45.083L6.3 5.508a1.875 1.875 0 00-2.282.819l-.922 1.597a1.875 1.875 0 00.432 2.385l.84.692c.095.078.17.229.154.43a7.598 7.598 0 000 1.139c.015.2-.059.352-.153.43l-.841.692a1.875 1.875 0 00-.432 2.385l.922 1.597a1.875 1.875 0 002.282.818l1.019-.382c.115-.043.283-.031.45.082.312.214.641.405.985.57.182.088.277.228.297.35l.178 1.071c.151.904.933 1.567 1.85 1.567h1.844c.916 0 1.699-.663 1.85-1.567l.178-1.072c.02-.12.114-.26.297-.349.344-.165.673-.356.985-.570.167-.114.335-.125.45-.082l1.02.382a1.875 1.875 0 002.28-.819l.923-1.597a1.875 1.875 0 00-.432-2.385l-.84-.692c-.095-.078-.17-.229-.154-.43a7.614 7.614 0 000-1.139c-.016-.2.059-.352.153-.43l.84-.692c.708-.582.891-1.59.433-2.385l-.922-1.597a1.875 1.875 0 00-2.282-.818l-1.02.382c-.114.043-.282.031-.449-.083a7.49 7.49 0 00-.985-.57c-.183-.087-.277-.227-.297-.348L13.928 3.817c-.15-.904-.933-1.567-1.85-1.567h-1.844zM12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" clip-rule="evenodd" />
+                                </svg>
+                                Total Losses
+                            </h4>
+                            <div class="value" id="totalLosses">0</div>
+                            <div class="unit">%</div>
+                        </div>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3>AC Power Output</h3>
+                            <button class="btn-secondary" onclick="exportCSV()">
+                                <svg style="width: 16px; height: 16px;" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 2.25a.75.75 0 01.75.75v11.69l3.22-3.22a.75.75 0 111.06 1.06l-4.5 4.5a.75.75 0 01-1.06 0l-4.5-4.5a.75.75 0 111.06-1.06l3.22 3.22V3a.75.75 0 01.75-.75zm-9 13.5a.75.75 0 01.75.75v2.25a1.5 1.5 0 001.5 1.5h13.5a1.5 1.5 0 001.5-1.5V16.5a.75.75 0 011.5 0v2.25a3 3 0 01-3 3H5.25a3 3 0 01-3-3V16.5a.75.75 0 01.75-.75z" />
+                                </svg>
+                                Export CSV
+                            </button>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="powerChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Solar Irradiance</h3>
+                        <div class="chart-container">
+                            <canvas id="irradianceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="placeholder" class="card placeholder">
+                    <svg fill="#d1d5db" viewBox="0 0 24 24">
+                        <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
+                    </svg>
+                    <h3>เริ่มต้นการคำนวณ</h3>
+                    <p>กรุณาตั้งค่าระบบและเลือกวันที่ แล้วกดปุ่มคำนวณ</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Set default date to today
+        document.getElementById('selectedDate').value = new Date().toISOString().split('T')[0];
+        
+        let currentResults = null;
+        let powerChart = null;
+        let irradianceChart = null;
+
+        // Mock weather data generation
+        function generateMockWeatherData() {
+            const data = [];
+            for (let hour = 0; hour < 24; hour++) {
+                const solarAngle = (hour - 6) * Math.PI / 12;
+                const baseSolar = hour >= 6 && hour <= 18 ? Math.sin(solarAngle) : 0;
+                
+                data.push({
+                    hour: hour,
+                    time: hour.toString().padStart(2, '0') + ':00',
+                    temp_air: 25 + Math.random() * 10,
+                    cloud_cover: Math.random() * 100,
+                    ghi: Math.max(0, baseSolar * (800 + Math.random() * 200 - 100)),
+                    dni: Math.max(0, baseSolar * (600 + Math.random() * 150 - 75)),
+                    dhi: Math.max(0, baseSolar * (200 + Math.random() * 50 - 25)),
+                    wind_speed: 2 + Math.random() * 8
+                });
+            }

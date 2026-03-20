@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Solar Forecast Calculator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --main-purple: #6E3C9A;
+      --main-gold:   #F5C441;
+    }
+    body {
+      font-family: "Segoe UI", sans-serif;
+      margin: 0; padding: 20px;
+      background: #f5f5f5;
+    }
+    .container { max-width:900px; margin:auto; }
+    .row { display:flex; gap:12px; margin-bottom:12px; }
+    label { width:80px; }
+    input, select { flex:1; padding:6px; }
+    button { padding:10px 16px; background:var(--main-purple); color:#fff; border:none; cursor:pointer; }
+    .chart { margin-top:24px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>☀️ Solar Forecast Calculator</h1>
+    <div class="row">
+      <label for="date">Date</label>
+      <input type="date" id="date" value="">
+    </div>
+    <div class="row">
+      <label for="lat">Latitude</label>
+      <input type="number" id="lat" step="0.00001" value="13.85093">
+    </div>
+    <div class="row">
+      <label for="lon">Longitude</label>
+      <input type="number" id="lon" step="0.00001" value="100.55748">
+    </div>
+    <div class="row">
+      <label for="kw">System kW</label>
+      <input type="number" id="kw" value="5000">
+    </div>
+    <div class="row">
+      <label for="tilt">Tilt (°)</label>
+      <input type="number" id="tilt" value="15">
+    </div>
+    <div class="row">
+      <label for="az">Azimuth</label>
+      <input type="number" id="az" value="180">
+    </div>
+    <div class="row">
+      <label>Losses (%)</label>
+      <div style="flex:1; display:grid; grid-template-columns:repeat(3,1fr); gap:6px;">
+        <input type="number" placeholder="soiling" data-loss="soiling" value="0">
+        <input type="number" placeholder="shading" data-loss="shading" value="0">
+        <input type="number" placeholder="mismatch" data-loss="mismatch" value="0">
+        <input type="number" placeholder="wiring" data-loss="wiring" value="0">
+        <input type="number" placeholder="connections" data-loss="connections" value="0">
+        <input type="number" placeholder="lid" data-loss="lid" value="0">
+        <input type="number" placeholder="nameplate" data-loss="nameplate" value="0">
+        <input type="number" placeholder="availability" data-loss="availability" value="0">
+        <input type="number" placeholder="degradation" data-loss="degradation" value="12">
+      </div>
+    </div>
+    <button onclick="runCalc()">คำนวณ</button>
+
+    <div id="summary" style="margin-top:24px;"></div>
+
+    <div class="chart">
+      <canvas id="powerChart"></canvas>
+    </div>
+    <div class="chart">
+      <canvas id="irrChart"></canvas>
+    </div>
+  </div>
+
+<script>
+  // set today
+  document.getElementById('date').value = new Date().toISOString().split('T')[0];
+
+  let powerChart, irrChart;
+  async function runCalc(){
+    const cfg = {
+      date: document.getElementById('date').value,
+      lat:  document.getElementById('lat').value,
+      lon:  document.getElementById('lon').value,
+      kw:   document.getElementById('kw').value,
+      tilt: document.getElementById('tilt').value,
+      az:   document.getElementById('az').value,
+    };
+    // collect losses
+    document.querySelectorAll('[data-loss]').forEach(i=>{
+      cfg[i.dataset.loss] = i.value;
+    });
+
+    // build query
+    const params = new URLSearchParams(cfg).toString();
+    const resp   = await fetch(`/api/forecast?${params}`);
+    const json   = await resp.json();
+
+    // show summary
+    const s = json.summary;
+    document.getElementById('summary').innerHTML = `
+      <b>Peak:</b> ${s.peak.toFixed(1)} kW &nbsp;
+      <b>Total:</b> ${s.totalKwh.toFixed(1)} kWh &nbsp;
+      <b>CF:</b> ${s.cf.toFixed(1)} % &nbsp;
+      <b>Loss:</b> ${s.lossPct.toFixed(1)} %
+    `;
+
+    const labels = json.data.map(r=>r.time);
+    const pacNet = json.data.map(r=>r.pacNet);
+    const pacRaw = json.data.map(r=>r.pacRaw);
+    const ghi    = json.data.map(r=>r.ghi);
+    const dni    = json.data.map(r=>r.dni);
+
+    // power chart
+    if(powerChart) powerChart.destroy();
+    powerChart = new Chart(document.getElementById('powerChart'), {
+      type:'line',
+      data:{
+        labels,
+        datasets:[
+          {label:'AC Net', data:pacNet, borderColor:var(--main-purple), fill:true},
+          {label:'AC Raw', data:pacRaw, borderColor:var(--main-gold), fill:false, borderDash:[5,5]}
+        ]
+      }
+    });
+
+    // irradiance
+    if(irrChart) irrChart.destroy();
+    irrChart = new Chart(document.getElementById('irrChart'), {
+      type:'line',
+      data:{
+        labels,
+        datasets:[
+          {label:'GHI', data:ghi, borderColor:'#f59e0b', fill:true},
+          {label:'DNI', data:dni, borderColor:'#ef4444', fill:false, borderDash:[5,5]}
+        ]
+      }
+    });
+  }
+</script>
+</body>
+</html>
